@@ -1,43 +1,126 @@
 'use strict';
-
-// Content script file will run in the context of web page.
-// With content script you can manipulate the web pages using
-// Document Object Model (DOM).
-// You can also pass information to the parent extension.
-
-// We execute this script by making an entry in manifest.json file
-// under `content_scripts` property
-
-// For more information on Content Scripts,
-// See https://developer.chrome.com/extensions/content_scripts
-
-// Log `title` of current active web page
-const pageTitle = document.head.getElementsByTagName('title')[0].innerHTML;
-console.log(
-  `Page title is: '${pageTitle}' - evaluated by Chrome extension's 'contentScript.js' file`
-);
-
-// Communicate with background file by sending a message
-chrome.runtime.sendMessage(
-  {
-    type: 'GREETINGS',
-    payload: {
-      message: 'Hello, my name is Con. I am from ContentScript.',
-    },
+const storage = {
+  set: async (key, values) => {
+    await chrome.storage.local.set({
+      [key]: values,
+    });
   },
-  (response) => {
-    console.log(response.message);
-  }
-);
+  get: async (key) => {
+    const values = await chrome.storage.local.get();
+    if (values) {
+      const res = values[key] ?? null;
+      return res;
+    }
+    return null;
+  },
+  log: async () => {
+    const values = await chrome.storage.local.get();
+    console.log(values);
+  },
+  clear: async () => {
+    await chrome.storage.local.clear();
+  },
+};
 
-// Listen for message
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.type === 'COUNT') {
-    console.log(`Current count is ${request.payload.count}`);
+  if (request.type === 'STARTFILL') {
+    fillForm(request.payload.form);
+  }
+  if (request.type === 'GENERATEDATA') {
+    const result = generateData(request.payload.form);
+    if (result) {
+      sendResponse({
+        message: 'Start event recieved',
+        form: request.payload.form,
+        succeeded: true,
+      });
+    }
+  }
+  if (request.type === 'UPDATE') {
+    updateData(request.payload.form, request.payload.data);
   }
 
-  // Send an empty response
-  // See https://github.com/mozilla/webextension-polyfill/issues/130#issuecomment-531531890
-  sendResponse({});
+  sendResponse({
+    message: 'Start event recieved',
+  });
   return true;
 });
+
+function updateData(key, values) {
+  try {
+    const data = JSON.parse(values);
+    storage.set(key, data);
+  } catch (error) {
+    console.log('Could not parse updated data: ' + error);
+  }
+  console.log(JSON.parse(values));
+  console.log('Values: ' + JSON.stringify(values));
+}
+
+function getElements() {
+  const inputElements = document.getElementsByTagName('input');
+  const result = [];
+  for (let index = 0; index < inputElements.length; index++) {
+    const element = inputElements[index];
+    if (element.name) {
+      result.push(element);
+    }
+  }
+  return result;
+}
+function fillTextInputs(inputElements, values) {
+  for (let index = 0; index < inputElements.length; index++) {
+    const element = inputElements[index];
+    if (element.name) {
+      if (values[element.name]) {
+        element.value = values[element.name];
+        element.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+    }
+  }
+}
+function fillSpecialInputs(inputElements, values) {
+  for (let index = 0; index < inputElements.length; index++) {
+    const element = inputElements[index];
+    if (element.name) {
+      if (element.type === 'checkbox') {
+        if (values[element.name] === true) {
+          element.click();
+        }
+      }
+    }
+  }
+}
+
+async function fillForm(name) {
+  const inputElements = getElements();
+  const values = await storage.get(name);
+  // console.log(name, values);
+  fillSpecialInputs(inputElements, values);
+  setTimeout(() => {
+    fillTextInputs(inputElements, values);
+  }, 500);
+}
+
+function getValues(inputElements) {
+  const result = {};
+  for (let index = 0; index < inputElements.length; index++) {
+    const element = inputElements[index];
+    if (element.name) {
+      result[element.name] = element.value;
+    }
+  }
+  return result;
+}
+
+async function generateData(name) {
+  try {
+    const inputElements = getElements();
+    const result = getValues(inputElements);
+    await storage.set(name, result);
+    return true;
+  } catch (error) {
+    console.log('Error while generating data', error);
+    return false;
+  }
+}

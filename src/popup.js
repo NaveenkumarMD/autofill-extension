@@ -1,112 +1,207 @@
 'use strict';
 
 import './popup.css';
+import CodeFlask from 'codeflask';
+import Prism from 'prismjs';
 
 (function () {
-  // We will make use of Storage API to get and store `count` value
-  // More information on Storage API can we found at
-  // https://developer.chrome.com/extensions/storage
+  const flask = new CodeFlask('#editor', {
+    language: 'json',
+    lineNumbers: true,
+    tabSize: 2,
+  });
+  flask.addLanguage('json', Prism.languages['json']);
 
-  // To get storage access, we have to mention it in `permissions` property of manifest.json file
-  // More information on Permissions can we found at
-  // https://developer.chrome.com/extensions/declare_permissions
-  const counterStorage = {
-    get: (cb) => {
-      chrome.storage.sync.get(['count'], (result) => {
-        cb(result.count);
-      });
-    },
-    set: (value, cb) => {
-      chrome.storage.sync.set(
+  // const new_content = '{name:"naveenkunar"}';
+
+  // flask.updateCode(new_content);
+  // flask.onUpdate(showSaveButton);
+
+  async function toggleEditorView() {
+    const editorContainerDOM = document.getElementById('editor-container');
+    const saveButtonDOM = document.getElementById('saveButton');
+    editorContainerDOM.classList.toggle('visible');
+    saveButtonDOM.classList.toggle('visible');
+    // Fill the editor container with the data
+    if (!editorContainerDOM.classList.contains('visible')) {
+      const key = document.getElementById('formSelect').value;
+      const values = await chrome.storage.local.get(key);
+      flask.updateCode(JSON.stringify(values[key], null, '  '));
+    }
+  }
+  async function updateEditorView() {
+    const editorContainerDOM = document.getElementById('editor-container');
+    if (!editorContainerDOM.classList.contains('visible')) {
+      const key = document.getElementById('formSelect').value;
+      const values = await chrome.storage.local.get(key);
+      flask.updateCode(JSON.stringify(values[key], null, '  '));
+    }
+  }
+  function updateData() {
+    const key = document.getElementById('formSelect').value;
+    const code = flask.getCode();
+    console.log('code i s', code);
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      const tab = tabs[0];
+      const value = document.getElementById('formSelect').value;
+      chrome.tabs.sendMessage(
+        tab.id,
         {
-          count: value,
+          type: 'UPDATE',
+          payload: {
+            form: value,
+            data: code,
+          },
         },
-        () => {
-          cb();
+        (response) => {
+          // console.log('Current count value passed to contentScript file');
         }
       );
-    },
-  };
-
-  function setupCounter(initialValue = 0) {
-    document.getElementById('counter').innerHTML = initialValue;
-
-    document.getElementById('incrementBtn').addEventListener('click', () => {
-      updateCounter({
-        type: 'INCREMENT',
-      });
     });
-
-    document.getElementById('decrementBtn').addEventListener('click', () => {
-      updateCounter({
-        type: 'DECREMENT',
-      });
+  }
+  async function populateSelectOptions() {
+    const selectedValue = document.getElementById('formSelect').value;
+    const data = await chrome.storage.local.get();
+    const options = Object.keys(data);
+    const selectDOM = document.getElementById('formSelect');
+    selectDOM.innerHTML = '';
+    options.forEach((option) => {
+      const optionDOM = document.createElement('option');
+      optionDOM.value = option;
+      optionDOM.innerText = option;
+      selectDOM.appendChild(optionDOM);
+    });
+    selectDOM.value = selectedValue;
+  }
+  populateSelectOptions();
+  function fillForm() {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      const tab = tabs[0];
+      const value = document.getElementById('formSelect').value;
+      chrome.tabs.sendMessage(
+        tab.id,
+        {
+          type: 'STARTFILL',
+          payload: {
+            form: value,
+          },
+        },
+        (response) => {
+          // console.log('Current count value passed to contentScript file');
+        }
+      );
+    });
+  }
+  function generateData() {
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      const tab = tabs[0];
+      const name = document.getElementById('nameInput').value;
+      chrome.tabs.sendMessage(
+        tab.id,
+        {
+          type: 'GENERATEDATA',
+          payload: {
+            form: name,
+          },
+        },
+        (response) => {
+          if (response.succeeded) {
+            populateSelectOptions();
+          }
+        }
+      );
     });
   }
 
-  function updateCounter({ type }) {
-    counterStorage.get((count) => {
-      let newCount;
+  async function downloadData() {
+    try {
+      const data = await chrome.storage.local.get();
 
-      if (type === 'INCREMENT') {
-        newCount = count + 1;
-      } else if (type === 'DECREMENT') {
-        newCount = count - 1;
-      } else {
-        newCount = count;
-      }
+      const jsonString = JSON.stringify(data, null, 2);
 
-      counterStorage.set(newCount, () => {
-        document.getElementById('counter').innerHTML = newCount;
+      const blob = new Blob([jsonString], { type: 'application/json' });
 
-        // Communicate with content script of
-        // active tab by sending a message
-        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-          const tab = tabs[0];
+      const url = URL.createObjectURL(blob);
 
-          chrome.tabs.sendMessage(
-            tab.id,
-            {
-              type: 'COUNT',
-              payload: {
-                count: newCount,
-              },
-            },
-            (response) => {
-              console.log('Current count value passed to contentScript file');
-            }
-          );
-        });
-      });
-    });
-  }
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'data.json';
 
-  function restoreCounter() {
-    // Restore count value
-    counterStorage.get((count) => {
-      if (typeof count === 'undefined') {
-        // Set counter value as 0
-        counterStorage.set(0, () => {
-          setupCounter(0);
-        });
-      } else {
-        setupCounter(count);
-      }
-    });
-  }
+      document.body.appendChild(link);
+      link.click();
 
-  document.addEventListener('DOMContentLoaded', restoreCounter);
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
 
-  // Communicate with background file by sending a message
-  chrome.runtime.sendMessage(
-    {
-      type: 'GREETINGS',
-      payload: {
-        message: 'Hello, my name is Pop. I am from Popup.',
-      },
-    },
-    (response) => {
-      console.log(response.message);
+      console.log('Data downloaded successfully.');
+    } catch (error) {
+      console.error('Error downloading data:', error);
     }
-  );
+  }
+  async function setNewObjectToLocalStorage(object) {
+    for (const [key, value] of Object.entries(object)) {
+      await chrome.storage.local.set({ [key]: value }, function () {
+        if (chrome.runtime.lastError) {
+          console.error(
+            `Error setting data for ${key}: `,
+            chrome.runtime.lastError
+          );
+        } else {
+          console.log(`Data for ${key} successfully saved to local storage`);
+        }
+      });
+    }
+  }
+  async function deleteAllData() {
+    const result = confirm('Are you sure you want to delete all data');
+    if (result) {
+      await chrome.storage.local.clear();
+      populateSelectOptions();
+    }
+  }
+  async function generateDataFromFile() {
+    async function onReaderLoad(event) {
+      try {
+        const newData = JSON.parse(event.target.result);
+        const oldaData = await chrome.storage.local.get();
+        const updatedData = { ...newData, ...oldaData };
+        await setNewObjectToLocalStorage(updatedData);
+        populateSelectOptions();
+      } catch (error) {}
+    }
+    function onReaderError(event) {}
+    const file = document.getElementById('uploadFileInput').files[0];
+    var reader = new FileReader();
+    reader.onload = onReaderLoad;
+    reader.onerror = onReaderError;
+    reader.readAsText(file);
+  }
+  function triggerfileUpload() {
+    document.getElementById('uploadFileInput').click();
+  }
+  document.getElementById('fillButton').addEventListener('click', fillForm);
+  document
+    .getElementById('generateButton')
+    .addEventListener('click', generateData);
+  document
+    .getElementById('viewDataButton')
+    .addEventListener('click', toggleEditorView);
+  document.getElementById('saveButton').addEventListener('click', updateData);
+  document
+    .getElementById('formSelect')
+    .addEventListener('change', updateEditorView);
+
+  document
+    .getElementById('downloadButton')
+    .addEventListener('click', downloadData);
+  document
+    .getElementById('uploadButton')
+    .addEventListener('click', triggerfileUpload);
+
+  document
+    .getElementById('uploadFileInput')
+    .addEventListener('input', generateDataFromFile);
+  document
+    .getElementById('deleteButton')
+    .addEventListener('click', deleteAllData);
 })();

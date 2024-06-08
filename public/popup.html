@@ -6,27 +6,45 @@
     <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
-    <div class="app">
-      <p class="counter-label">Counter</p>
-      <div id="counter" class="counter"></div>
-      <div class="button-container">
-        <button id="decrementBtn" class="button">-</button>
-        <button id="incrementBtn" class="button">+</button>
+    <div class="container">
+      <!-- <header>Fill your forms instantly</header> -->
+      <form>
+        <label class="label">Select the stored data to fill the form</label>
+        <select class="input" name="form" id="formSelect"></select>
+        <div class="button-container">
+          <button type="button" id="fillButton" class="button">
+            Fill form
+          </button>
+          <button type="button" class="button" id="viewDataButton">
+            View / Edit
+          </button>
+        </div>
+      </form>
+      <div class="editor-container visible" id="editor-container">
+        <div id="editor" class="form-data"></div>
       </div>
+      <button type="button" id="saveButton" class="button visible">Save</button>
 
-      <hr class="divider" />
-
-      <p class="title">Chrome Extension is Ready!</p>
-      <p class="subtitle">Start by updating <code>popup.html</code></p>
+      <form>
+        <label class="label">Enter a key to identify the form</label>
+        <input class="input" type="text" id="nameInput" />
+        <button type="button" id="generateButton" class="button">
+          Generate data from form
+        </button>
+      </form>
+      <div class="actions">
+        <div class="icon" id="downloadButton">
+          <img src="download-solid.svg" />
+        </div>
+        <div class="icon" id="uploadButton">
+          <img src="upload-solid.svg" />
+        </div>
+        <div class="icon" id="deleteButton">
+          <img src="trash-solid.svg" />
+        </div>
+      </div>
+      <script src="popup.js" defer></script>
     </div>
-
-    <script src="popup.js"></script>
-
-    <!--
-      This HTML file opens when you click on icon from the toolbar.
-
-      To begin the development, run `npm run watch`.
-      To create a production bundle, use `npm run build`.
-    -->
+    <input style="display: none" type="file" id="uploadFileInput" />
   </body>
 </html>

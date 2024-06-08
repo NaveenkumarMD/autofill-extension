@@ -1,92 +1,107 @@
-/* normalize css starts here */
-*,
-*::before,
-*::after {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+@font-face {
+  font-family: 'Urbanist';
+  src: URL('Urbanist-VariableFont_wght.ttf') format('truetype');
 }
-/* normalize css ends here */
-
-html {
-  font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Helvetica, Arial,
-    sans-serif;
-  color: #222;
+.container {
+  padding: 16px;
+  header {
+    color: var(--Dark, #1e232c);
+    font-family: Urbanist;
+    font-size: 30px;
+    font-style: normal;
+    font-weight: 700;
+    line-height: 130%;
+    letter-spacing: -0.3px;
+  }
+  .button {
+    width: 100%;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background: var(--Dark, #1e232c);
+    color: var(--White, #fff);
+    font-family: Urbanist;
+    font-size: 15px;
+    font-style: normal;
+    font-weight: 600;
+    line-height: normal;
+    cursor: pointer;
+    letter-spacing: 1px;
+  }
+  .input {
+    width: 330px;
+    height: 56px;
+    flex-shrink: 0;
+    border-radius: 8px;
+    border: 1px solid #dadada;
+    background: #f7f8f9;
+    margin-bottom: 15px;
+    color: #8391a1;
+    font-family: Urbanist;
+    font-size: 15px;
+    font-style: normal;
+    font-weight: 500;
+    line-height: 125%;
+    margin-top: 4px;
+  }
+  .button-container {
+    display: flex;
+    width: 100%;
+    gap: 10px;
+  }
+  .label {
+    color: #8391a1;
+    font-family: Urbanist;
+    font-size: 14px;
+    margin-top: 4px;
+  }
+  form {
+    margin: 20px 0px;
+  }
+  .actions {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    margin-top: 20px;
+    .icon {
+      cursor: pointer;
+      display: flex;
+      width: 105px;
+      height: 56px;
+      padding: 15px 0px;
+      justify-content: center;
+      align-items: center;
+      flex-shrink: 0;
+      border-radius: 8px;
+      border: 1px solid #dadada;
+      img {
+        width: 26px;
+        height: 26px;
+        flex-shrink: 0;
+      }
+    }
+  }
+  .editor-container {
+    height: 300px;
+    border-radius: 3px;
+    box-shadow: 0 2px 2px 0 rgba(red, 0.14), 0 1px 5px 0 rgba(red, 0.12),
+      0 3px 1px -2px rgba(red, 0.2);
+    margin-left: -30px;
+    .codeflask {
+      width: 100%;
+      height: 47%;
+      border-radius: 3px;
+      &::before,
+      .codeflask__lines {
+        background: #fff;
+      }
+    }
+  }
 }
-
-body {
-  width: 350px;
-  height: 300px;
-}
-
-.app {
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  text-align: center;
-  padding: 20px;
-}
-
-.title {
-  font-size: 18px;
-  font-weight: 600;
-  margin-bottom: 10px;
-}
-
-.subtitle {
-  font-size: 12px;
-}
-
-code {
-  font-size: 12px;
-  font-family: inherit;
-  background-color: rgba(254, 237, 185, 0.3);
-  padding: 2px 4px;
-  border-radius: 2px;
-}
-
-.counter-label {
-  font-size: 12px;
-  margin-bottom: 5px;
-}
-
-.counter {
-  font-size: 36px;
-  font-weight: 700;
-}
-
-.button-container {
-  margin-top: 15px;
-}
-
-.button {
-  border: 0;
-  display: inline-block;
-  padding: 10px 20px;
-  margin-right: 4px;
-  margin-left: 4px;
-  background-color: bisque;
-  font-size: 16px;
-  cursor: pointer;
-  border-radius: 4px;
-  text-decoration: none;
-  transition: transform 0.2s ease;
-  user-select: none;
-}
-
-.button:focus {
-  outline: none;
-}
-
-.button:hover {
-  transform: scale(1.1);
-}
-
-.divider {
-  margin: 30px auto 25px;
-  width: 50px;
-  border: 0.5px dashed #000;
-  opacity: 0.1;
+.visible {
+  display: none !important;
 }
