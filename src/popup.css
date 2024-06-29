@@ -97,7 +97,7 @@
       border-radius: 3px;
       &::before,
       .codeflask__lines {
-        background: #fff;
+        background-color: #fff;
       }
     }
   }

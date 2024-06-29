@@ -53,8 +53,6 @@ function updateData(key, values) {
   } catch (error) {
     console.log('Could not parse updated data: ' + error);
   }
-  console.log(JSON.parse(values));
-  console.log('Values: ' + JSON.stringify(values));
 }
 
 function getElements() {
@@ -84,11 +82,30 @@ function fillSpecialInputs(inputElements, values) {
     const element = inputElements[index];
     if (element.name) {
       if (element.type === 'checkbox') {
-        if (values[element.name] === true) {
+        const currentValue = getValueFromBooleanInput(element);
+        if (currentValue !== values[element.name]) {
           element.click();
         }
       }
     }
+  }
+}
+
+// Doesn't work properly with checkbox
+function getValueFromBooleanInput(element) {
+  //toggle
+  console.log(element);
+  if (typeof element.value === 'boolean') {
+    return element.value;
+  } else if (element.value === 'true') {
+    return true;
+  } else if (element.value === 'false') {
+    return false;
+  } else if (element.value === 'on') {
+    //actual checkbox
+    return element.value === 'on';
+  } else {
+    return false;
   }
 }
 
@@ -107,7 +124,11 @@ function getValues(inputElements) {
   for (let index = 0; index < inputElements.length; index++) {
     const element = inputElements[index];
     if (element.name) {
-      result[element.name] = element.value;
+      if (element.type === 'checkbox') {
+        result[element.name] = getValueFromBooleanInput(element);
+      } else {
+        result[element.name] = element.value;
+      }
     }
   }
   return result;

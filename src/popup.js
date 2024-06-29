@@ -12,11 +12,6 @@ import Prism from 'prismjs';
   });
   flask.addLanguage('json', Prism.languages['json']);
 
-  // const new_content = '{name:"naveenkunar"}';
-
-  // flask.updateCode(new_content);
-  // flask.onUpdate(showSaveButton);
-
   async function toggleEditorView() {
     const editorContainerDOM = document.getElementById('editor-container');
     const saveButtonDOM = document.getElementById('saveButton');
